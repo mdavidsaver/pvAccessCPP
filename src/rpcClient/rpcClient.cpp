@@ -20,7 +20,11 @@
 
 
 using namespace epics::pvData;
+#if __cplusplus<201103L
 using namespace std::tr1;
+#else
+using namespace std;
+#endif
 using std::string;
 
 namespace epics

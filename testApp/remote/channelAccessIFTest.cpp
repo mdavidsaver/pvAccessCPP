@@ -25,7 +25,9 @@
 
 #include "testServer.cpp"
 
+#if __cplusplus<201103L
 using namespace std::tr1;
+#endif
 
 
 // int value, 1Hz increment by one

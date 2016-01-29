@@ -25,7 +25,9 @@
 #include <pv/event.h>
 
 using namespace std;
+#if __cplusplus<201103L
 using namespace std::tr1;
+#endif
 using namespace epics::pvData;
 using namespace epics::pvAccess;
 
