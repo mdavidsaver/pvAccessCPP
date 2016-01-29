@@ -2405,18 +2405,13 @@ namespace epics {
                 
                PVStructurePtr pvOptions = m_pvRequest->getSubField<PVStructure>("record._options");
                if (pvOptions) {
-                   PVStringPtr pvString = pvOptions->getSubField<PVString>("queueSize");
-                   if (pvString) {
-                       int32 size;
-                       std::stringstream ss;
-                       ss << pvString->get();
-                       ss >> size;
-                       if (size > 1)
-                        m_queueSize = size;
+                   PVScalarPtr opt = pvOptions->getSubField<PVScalar>("queueSize");
+                   if (opt) {
+                       m_queueSize = opt->getAs<uint32>();
                    }
-                   pvString = pvOptions->getSubField<PVString>("pipeline");
-                   if (pvString)
-                       m_pipeline = (pvString->get() == "true");
+                   opt = pvOptions->getSubField<PVScalar>("pipeline");
+                   if (opt)
+                       m_pipeline = opt->getAs<boolean>();
 
                    // pipeline options
                    if (m_pipeline)
@@ -2424,14 +2419,9 @@ namespace epics {
                        // defaults to queueSize/2
                        m_ackAny = m_queueSize/2;
 
-                       pvString = pvOptions->getSubField<PVString>("ackAny");
-                       if (pvString) {
-                           int32 size;
-                           std::stringstream ss;
-                           ss << pvString->get();
-                           ss >> size;
-                           if (size > 0)
-                            m_ackAny = size;
+                       opt = pvOptions->getSubField<PVScalar>("ackAny");
+                       if (opt) {
+                           m_ackAny = opt->getAs<boolean>();
                        }
                    }
                }
