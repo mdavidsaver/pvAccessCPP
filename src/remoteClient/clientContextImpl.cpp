@@ -2407,18 +2407,21 @@ private:
 
         PVStructurePtr pvOptions = m_pvRequest->getSubField<PVStructure>("record._options");
         if (pvOptions) {
-            PVStringPtr pvString = pvOptions->getSubField<PVString>("queueSize");
-            if (pvString) {
-                int32 size;
-                std::stringstream ss;
-                ss << pvString->get();
-                ss >> size;
-                if (size > 1)
-                    m_queueSize = size;
+            PVScalarPtr opt = pvOptions->getSubField<PVScalar>("queueSize");
+            if (opt) {
+                try{
+                    int32 qS = opt->getAs<int32>();
+                    if(qS<m_queueSize)
+                        m_monitorRequester->message("specified queueSize is too small", warningMessage);
+                    else
+                        m_queueSize = qS;
+                }catch(std::exception&){
+                    m_monitorRequester->message("Unable to parse queueSize", warningMessage);
+                }
             }
-            pvString = pvOptions->getSubField<PVString>("pipeline");
-            if (pvString)
-                m_pipeline = (pvString->get() == "true");
+            opt = pvOptions->getSubField<PVScalar>("pipeline");
+            if (opt)
+                m_pipeline = opt->getAs<boolean>();
 
             // pipeline options
             if (m_pipeline)
@@ -2426,7 +2429,7 @@ private:
                 // defaults to queueSize/2
                 m_ackAny = m_queueSize/2;
 
-                pvString = pvOptions->getSubField<PVString>("ackAny");
+                PVStringPtr pvString = pvOptions->getSubField<PVString>("ackAny");
                 if (pvString) {
                     int32 size;
                     string sval = pvString->get();
