@@ -2086,7 +2086,7 @@ namespace epics {
 
            MonitorRequester::shared_pointer m_callback;
 
-           Mutex m_mutex;
+           mutable Mutex m_mutex;
 
            BitSet::shared_pointer m_bitSet1;
            BitSet::shared_pointer m_bitSet2;
@@ -2305,6 +2305,13 @@ namespace epics {
                     }
                }
             }
+
+           virtual void getStats(Stats& s) const {
+               Lock guard(m_mutex);
+               s.nempty = m_freeQueue.size();
+               s.nfilled = m_monitorQueue.size();
+               s.noutstanding = m_queueSize - s.nempty - s.nfilled;
+           }
 
             virtual void send(ByteBuffer* buffer, TransportSendControl* control) {
                 control->startMessage((int8)CMD_MONITOR, 9);
@@ -2665,6 +2672,10 @@ namespace epics {
             virtual void release(MonitorElement::shared_pointer const & monitorElement)
             {
                 m_monitorStrategy->release(monitorElement);
+            }
+            virtual void getStats(Stats& s) const
+            {
+                m_monitorStrategy->getStats(s);
             }
 
             virtual void lock()
