@@ -827,6 +827,9 @@ class epicsShareClass ChannelRequester : public virtual Requester {
 public:
     POINTER_DEFINITIONS(ChannelRequester);
     typedef Channel operation_type;
+    virtual ~ChannelRequester() {}
+
+    virtual void message(std::string const & message, epics::pvData::MessageType messageType);
 
     /**
      * A channel has been created. This may be called multiple times if there are multiple providers.
