@@ -12,6 +12,12 @@ namespace pvd = epics::pvData;
 namespace epics {
 namespace pvAccess {
 
+void ChannelRequester::message(std::string const & message, epics::pvData::MessageType messageType)
+{
+    std::cerr << "[" << getRequesterName() << "] message(" << message << ", "
+              << pvd::getMessageTypeName(messageType) << ")\n";
+}
+
 const char* Channel::ConnectionStateNames[] = { "NEVER_CONNECTED", "CONNECTED", "DISCONNECTED", "DESTROYED" };
 
 std::string Channel::getRequesterName()
