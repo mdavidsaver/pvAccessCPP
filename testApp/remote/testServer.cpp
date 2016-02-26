@@ -508,11 +508,6 @@ class ChannelRequesterImpl : public ChannelRequester
     virtual string getRequesterName()
     {
         return "ChannelRequesterImpl";
-    };
-
-    virtual void message(std::string const & message,MessageType messageType)
-    {
-        std::cout << "[" << getRequesterName() << "] message(" << message << ", " << getMessageTypeName(messageType) << ")" << std::endl;
     }
 
     virtual void channelCreated(epics::pvData::Status const & /*status*/, Channel::shared_pointer const & /*channel*/)

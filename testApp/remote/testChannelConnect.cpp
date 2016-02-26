@@ -36,11 +36,6 @@ private:
         return "ChannelRequesterImpl";
     };
 
-    virtual void message(std::string const & message,MessageType messageType)
-    {
-        std::cout << "[" << getRequesterName() << "] message(" << message << ", " << getMessageTypeName(messageType) << ")" << std::endl;
-    }
-
     virtual void channelCreated(const epics::pvData::Status& status, Channel::shared_pointer const & channel)
     {
         if (!status.isSuccess())

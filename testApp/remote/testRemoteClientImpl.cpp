@@ -31,11 +31,6 @@ class ChannelRequesterImpl : public ChannelRequester
     virtual string getRequesterName()
     {
         return "ChannelRequesterImpl";
-    };
-
-    virtual void message(std::string const & message,MessageType messageType)
-    {
-        std::cout << "[" << getRequesterName() << "] message(" << message << ", " << getMessageTypeName(messageType) << ")" << std::endl;
     }
 
     virtual void channelCreated(const epics::pvData::Status& status, Channel::shared_pointer const & channel)
@@ -55,7 +50,7 @@ class GetFieldRequesterImpl : public GetFieldRequester
     virtual string getRequesterName()
     {
         return "GetFieldRequesterImpl";
-    };
+    }
 
     virtual void message(std::string const & message,MessageType messageType)
     {
