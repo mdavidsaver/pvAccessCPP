@@ -356,8 +356,8 @@ ChannelRPC::shared_pointer CAChannel::createChannelRPC(
 }
 
 
-epics::pvData::Monitor::shared_pointer CAChannel::createMonitor(
-    epics::pvData::MonitorRequester::shared_pointer const & monitorRequester,
+Monitor::shared_pointer CAChannel::createMonitor(
+    MonitorRequester::shared_pointer const & monitorRequester,
     epics::pvData::PVStructure::shared_pointer const & pvRequest)
 {
     return CAChannelMonitor::create(shared_from_this(), monitorRequester, pvRequest);
@@ -1252,7 +1252,7 @@ void CAChannelPut::unlock()
 
 Monitor::shared_pointer CAChannelMonitor::create(
     CAChannel::shared_pointer const & channel,
-    epics::pvData::MonitorRequester::shared_pointer const & monitorRequester,
+    MonitorRequester::shared_pointer const & monitorRequester,
     epics::pvData::PVStructure::shared_pointer const & pvRequest)
 {
     // TODO use std::make_shared
@@ -1272,7 +1272,7 @@ CAChannelMonitor::~CAChannelMonitor()
 
 
 CAChannelMonitor::CAChannelMonitor(CAChannel::shared_pointer const & _channel,
-                                   epics::pvData::MonitorRequester::shared_pointer const & _monitorRequester,
+                                   MonitorRequester::shared_pointer const & _monitorRequester,
                                    epics::pvData::PVStructure::shared_pointer const & pvRequest) :
     channel(_channel),
     monitorRequester(_monitorRequester),
@@ -1301,7 +1301,7 @@ void CAChannelMonitor::activate()
 }
 
 
-/* --------------- epics::pvData::Monitor --------------- */
+/* --------------- Monitor --------------- */
 
 
 static void ca_subscription_handler(struct event_handler_args args)
@@ -1390,7 +1390,7 @@ epics::pvData::Status CAChannelMonitor::stop()
 }
 
 
-epics::pvData::MonitorElementPtr CAChannelMonitor::poll()
+MonitorElementPtr CAChannelMonitor::poll()
 {
     Lock lock(mutex);
     if (count)
@@ -1405,7 +1405,7 @@ epics::pvData::MonitorElementPtr CAChannelMonitor::poll()
 }
 
 
-void CAChannelMonitor::release(epics::pvData::MonitorElementPtr const & /*monitorElement*/)
+void CAChannelMonitor::release(MonitorElementPtr const & /*monitorElement*/)
 {
     // noop
 }

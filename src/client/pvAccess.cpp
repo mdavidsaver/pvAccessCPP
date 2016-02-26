@@ -87,7 +87,7 @@ ChannelRPC::shared_pointer Channel::createChannelRPC(
 }
 
 pvd::Monitor::shared_pointer Channel::createMonitor(
-        epics::pvData::MonitorRequester::shared_pointer const & requester,
+        MonitorRequester::shared_pointer const & requester,
         epics::pvData::PVStructure::shared_pointer const & pvRequest)
 {
     pvd::Monitor::shared_pointer ret;
