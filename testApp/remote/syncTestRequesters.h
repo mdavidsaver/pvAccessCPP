@@ -209,11 +209,6 @@ public:
     }
 
 
-    virtual void message(string const &, epics::pvData::MessageType )
-    {
-    }
-
-
     virtual void channelCreated(
         const epics::pvData::Status& status,
         epics::pvAccess::Channel::shared_pointer const & channel)
