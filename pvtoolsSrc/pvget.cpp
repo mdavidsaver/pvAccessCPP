@@ -41,7 +41,7 @@ string request(DEFAULT_REQUEST);
 string defaultProvider(DEFAULT_PROVIDER);
 const string noAddress;
 
-enum PrintMode { ValueOnlyMode, StructureMode, TerseMode };
+enum PrintMode { ValueOnlyMode, StructureMode, TerseMode, DeltaMode };
 PrintMode mode = ValueOnlyMode;
 
 char fieldSeparator = ' ';
@@ -332,6 +332,22 @@ public:
 
                 terseStructure(std::cout, element->pvStructurePtr) << std::endl;
             }
+            else if (mode == DeltaMode)
+            {
+                int32 bit = 0;
+                std::cout<<"=============\n";
+                std::cout<<"delta: "<<*element->changedBitSet<<"\n";
+                while ((bit = element->changedBitSet->nextSetBit(bit))!=-1) {
+                    PVFieldPtr fld = bit==0 ? std::tr1::static_pointer_cast<PVField>(element->pvStructurePtr) : element->pvStructurePtr->getSubField(bit);
+                    std::cout<<bit<<" "<<fld->getFullName()<<" "<<fld<<"\n";
+                    //assert(fld.get());
+                    //std::cout << *fld.get()<<"\n";
+
+                    int32 nextbit = fld->getNextFieldOffset();
+                    assert(nextbit>bit);
+                    bit=nextbit;
+                }
+            }
             else
             {
                 std::cout << m_channelName << std::endl;
@@ -383,7 +399,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":hvr:w:tmp:qdcF:f:ni")) != -1) {
+    while ((opt = getopt(argc, argv, ":hvr:w:tmp:qdcF:f:niD")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -470,6 +486,9 @@ int main (int argc, char *argv[])
                     "Option '-%c' requires an argument. ('pvget -h' for help.)\n",
                     optopt);
             return 1;
+        case 'D':
+            mode = DeltaMode;
+            break;
         default :
             usage();
             return 1;
