@@ -43,6 +43,7 @@ using epics::pvData::MonitorElement;
 using epics::pvData::MonitorElementPtr;
 using epics::pvData::MonitorElementPtrArray;
 using epics::pvData::Monitor;
+using epics::pvData::MonitorPtr;
 using epics::pvData::MonitorRequester;
 
 // TODO add write-only?
