@@ -131,7 +131,8 @@ struct epicsShareClass PeerInfo {
     pvData::PVStructure::const_shared_pointer aux;
 
     typedef std::set<std::string> roles_t;
-    roles_t roles; // ?
+    //! Set of strings which may be used to modify access control decisions.
+    roles_t roles;
 
     unsigned transportVersion; //!< If applicable, the protocol minor version number
 

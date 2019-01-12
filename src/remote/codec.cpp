@@ -1632,7 +1632,7 @@ void BlockingServerTCPTransportCodec::authenticationCompleted(epics::pvData::Sta
             _peerInfo.reset();
     }
 
-    if (!isVerified) // TODO sync
+    if (!isVerified)
         verified(status);
     else if (!status.isSuccess())
     {
