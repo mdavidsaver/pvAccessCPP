@@ -130,7 +130,8 @@ struct epicsShareClass PeerInfo {
     //! NULL or extra authority specific information.
     pvData::PVStructure::const_shared_pointer aux;
 
-    std::set<std::string> roles; // ?
+    typedef std::set<std::string> roles_t;
+    roles_t roles; // ?
 
     unsigned transportVersion; //!< If applicable, the protocol minor version number
 
