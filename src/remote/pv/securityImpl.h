@@ -29,6 +29,8 @@ public:
                                 epics::pvData::ByteBuffer* payloadBuffer);
 };
 
+void krb5authRegistrar(AuthenticationRegistry& servers, AuthenticationRegistry& clients);
+
 }}
 
 #endif // SECURITYIMPL_H

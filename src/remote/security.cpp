@@ -182,6 +182,10 @@ void authGblInit(void *)
         authGbl->authorizers.add(0, plugin);
     }
 
+#ifdef __linux__
+    krb5authRegistrar(authGbl->servers, authGbl->clients);
+#endif
+
     epics::registerRefCounter("PeerInfo", &PeerInfo::num_instances);
 }
 

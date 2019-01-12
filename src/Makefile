@@ -23,6 +23,7 @@ include $(PVACCESS_SRC)/rpcService/Makefile
 include $(PVACCESS_SRC)/rpcClient/Makefile
 include $(PVACCESS_SRC)/pipelineService/Makefile
 include $(PVACCESS_SRC)/mb/Makefile
+include $(PVACCESS_SRC)/krb5/Makefile
 
 LIBRARY += pvAccess
 
