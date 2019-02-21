@@ -15,23 +15,10 @@
 #include <pv/pvType.h>
 #include <pv/byteBuffer.h>
 
+#include <pv/discoverInterfaces.h>
+
 namespace epics {
 namespace pvAccess {
-
-typedef std::vector<osiSockAddr> InetAddrVector;
-
-struct ifaceNode {
-    osiSockAddr addr, //!< Our address
-                peer, //!< point to point peer
-                bcast,//!< sub-net broadcast address
-                mask; //!< Net mask
-    bool loopback,
-         validP2P, //!< true if peer has been set.
-         validBcast; //!< true if bcast and mask have been set
-    ifaceNode();
-};
-typedef std::vector<ifaceNode> IfaceNodeVector;
-epicsShareFunc int discoverInterfaces(IfaceNodeVector &list, SOCKET socket, const osiSockAddr *pMatchAddr = 0);
 
 /**
  * Encode IPv4 address as IPv6 address.

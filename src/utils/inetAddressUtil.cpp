@@ -138,6 +138,8 @@ ifaceNode::ifaceNode()
     validBcast = validP2P = loopback = false;
 }
 
+ifaceNode::~ifaceNode() {}
+
 static
 void checkNode(ifaceNode& node)
 {
