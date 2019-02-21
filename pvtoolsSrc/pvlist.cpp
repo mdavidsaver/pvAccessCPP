@@ -238,14 +238,14 @@ bool discoverServers(double timeOut)
     InetAddrVector broadcastAddresses;
     {
         IfaceNodeVector ifaces;
-        if(discoverInterfaces(ifaces, socket, 0)) {
+        if(discoverInterfaces(ifaces, 0)) {
             fprintf(stderr, "Unable to populate interface list\n");
             return false;
         }
 
         for(IfaceNodeVector::const_iterator it(ifaces.begin()), end(ifaces.end()); it!=end; ++it)
         {
-            if(it->validBcast && it->bcast.sa.sa_family == AF_INET) {
+            if(!it->loopback && it->validBcast && it->bcast.sa.sa_family == AF_INET) {
                 osiSockAddr bcast = it->bcast;
                 bcast.ia.sin_port = htons(broadcastPort);
                 broadcastAddresses.push_back(bcast);

@@ -4146,20 +4146,11 @@ private:
 
         // setup UDP transport
         {
-
-            // query broadcast addresses of all IFs
-            SOCKET socket = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
-            if (socket == INVALID_SOCKET)
-            {
-                throw std::logic_error("Failed to create a socket to introspect network interfaces.");
-            }
-
             IfaceNodeVector ifaceList;
-            if (discoverInterfaces(ifaceList, socket, 0) || ifaceList.size() == 0)
+            if (discoverInterfaces(ifaceList, NULL, true))
             {
                 LOG(logLevelError, "Failed to introspect interfaces or no network interfaces available.");
             }
-            epicsSocketDestroy (socket);
 
             initializeUDPTransports(false, m_udpTransports, ifaceList, m_responseHandler, m_searchTransport,
                                     m_broadcastPort, m_autoAddressList, m_addressList, std::string());

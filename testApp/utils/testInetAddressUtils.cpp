@@ -1,7 +1,9 @@
 #include <epicsUnitTest.h>
 #include <testMain.h>
 
+#include <pv/pvUnitTest.h>
 #include <pv/inetAddressUtil.h>
+#include <pv/discoverInterfaces.h>
 #include <pv/logger.h>
 
 #include <pv/byteBuffer.h>
@@ -13,9 +15,67 @@
 #include <iostream>
 #include <cstring>
 
-using namespace epics::pvData;
+namespace {
+
+namespace pvd = epics::pvData;
 using namespace epics::pvAccess;
-using namespace std;
+
+void test_discover()
+{
+    testDiag("test_discover()");
+
+    IfaceNodeVector results;
+
+    testDiag("Search including LO");
+    testOk1(discoverInterfaces(results, 0, true)==0);
+
+    testShow()<<"Found "<<results.size()<<" interfaces";
+
+    bool foundlo = false;
+
+    for(size_t i=0, N=results.size(); i<N; i++) {
+        const ifaceNode& cur = results[i];
+
+        foundlo |= cur.loopback;
+
+        testShow()<<"Interface"<<i
+                  <<(cur.loopback ? " Loopback":"")
+                  <<" "<<inetAddressToString(cur.addr)
+                  <<"/"<<inetAddressToString(cur.mask);
+        if(cur.validBcast)
+            testShow()<<"  BCast "<<inetAddressToString(cur.bcast);
+        if(cur.validP2P)
+            testShow()<<"  P2P "<<inetAddressToString(cur.peer);
+    }
+
+    testOk1(!!foundlo);
+
+    results.clear();
+
+    testDiag("Search again excluding LO");
+    testOk1(discoverInterfaces(results, 0, false)==0);
+
+    testShow()<<"Found "<<results.size()<<" interfaces";
+
+    foundlo = false;
+
+    for(size_t i=0, N=results.size(); i<N; i++) {
+        const ifaceNode& cur = results[i];
+
+        foundlo |= cur.loopback;
+
+        testShow()<<"Interface"<<i
+                  <<(cur.loopback ? " Loopback":"")
+                  <<" "<<inetAddressToString(cur.addr)
+                  <<"/"<<inetAddressToString(cur.mask);
+        if(cur.validBcast)
+            testShow()<<"  BCast "<<inetAddressToString(cur.bcast);
+        if(cur.validP2P)
+            testShow()<<"  P2P "<<inetAddressToString(cur.peer);
+    }
+
+    testOk1(!foundlo);
+}
 
 void test_getSocketAddressList()
 {
@@ -117,7 +177,7 @@ void test_encodeAsIPv6Address()
 {
     testDiag("Test encodeAsIPv6Address()");
 
-    epics::auto_ptr<ByteBuffer> buff(new ByteBuffer(32, EPICS_ENDIAN_LITTLE));
+    epics::auto_ptr<pvd::ByteBuffer> buff(new pvd::ByteBuffer(32, EPICS_ENDIAN_LITTLE));
 
     char src[] = { (char)0, (char)0, (char)0, (char)0, (char)0, (char)0,
                    (char)0, (char)0, (char)0, (char)0, (char)0xFF, (char)0xFF,
@@ -301,11 +361,14 @@ void test_multicastLoopback()
     epicsSocketDestroy(socket);
 }
 
+} // namespace
+
 MAIN(testInetAddressUtils)
 {
-    testPlan(63);
+    testPlan(67);
     testDiag("Tests for InetAddress utils");
 
+    test_discover();
     test_getSocketAddressList();
     test_encodeAsIPv6Address();
     test_isMulticastAddress();

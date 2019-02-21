@@ -12,6 +12,7 @@ INC += pv/wildcard.h
 INC += pv/fairQueue.h
 INC += pv/requester.h
 INC += pv/destroyable.h
+INC += pv/discoverInterfaces.h
 
 pvAccess_SRCS += getgroups.cpp
 pvAccess_SRCS += hexDump.cpp
