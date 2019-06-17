@@ -22,21 +22,22 @@ namespace {
 using pvac::detail::CallbackGuard;
 using pvac::detail::CallbackUse;
 
-struct Getter : public pvac::detail::CallbackStorage,
+static size_t num_instances;
+
+template<class Leaf>
+struct GetterCommon : public pvac::detail::CallbackStorage,
                 public pva::ChannelGetRequester,
                 public pvac::Operation::Impl,
-                public pvac::detail::wrapped_shared_from_this<Getter>
+                public pvac::detail::wrapped_shared_from_this<Leaf>
 {
     operation_type::shared_pointer op;
 
     pvac::ClientChannel::GetCallback *cb;
     pvac::GetEvent event;
 
-    static size_t num_instances;
-
-    explicit Getter(pvac::ClientChannel::GetCallback* cb) :cb(cb)
+    explicit GetterCommon(pvac::ClientChannel::GetCallback* cb) :cb(cb)
     {REFTRACE_INCREMENT(num_instances);}
-    virtual ~Getter() {
+    virtual ~GetterCommon() {
         CallbackGuard G(*this);
         cb = 0;
         G.wait(); // paranoia
@@ -68,7 +69,7 @@ struct Getter : public pvac::detail::CallbackStorage,
     virtual void cancel() OVERRIDE FINAL
     {
         // keepalive for safety in case callback wants to destroy us
-        std::tr1::shared_ptr<Getter> keepalive(internal_shared_from_this());
+        std::tr1::shared_ptr<Leaf> keepalive(this->internal_shared_from_this());
         CallbackGuard G(*this);
         if(op) op->cancel();
         callEvent(G, pvac::GetEvent::Cancel);
@@ -86,7 +87,7 @@ struct Getter : public pvac::detail::CallbackStorage,
         pva::ChannelGet::shared_pointer const & channelGet,
         epics::pvData::Structure::const_shared_pointer const & structure) OVERRIDE FINAL
     {
-        std::tr1::shared_ptr<Getter> keepalive(internal_shared_from_this());
+        std::tr1::shared_ptr<Leaf> keepalive(this->internal_shared_from_this());
         CallbackGuard G(*this);
         if(!cb) return;
 
@@ -118,7 +119,7 @@ struct Getter : public pvac::detail::CallbackStorage,
         epics::pvData::PVStructure::shared_pointer const & pvStructure,
         epics::pvData::BitSet::shared_pointer const & bitSet) OVERRIDE FINAL
     {
-        std::tr1::shared_ptr<Getter> keepalive(internal_shared_from_this());
+        std::tr1::shared_ptr<Leaf> keepalive(this->internal_shared_from_this());
         CallbackGuard G(*this);
         if(!cb) return;
 
@@ -141,7 +142,10 @@ struct Getter : public pvac::detail::CallbackStorage,
     }
 };
 
-size_t Getter::num_instances;
+struct Getter : public GetterCommon<Getter> {
+    explicit Getter(pvac::ClientChannel::GetCallback* cb) :GetterCommon<Getter>(cb) {}
+    virtual ~Getter() {}
+};
 
 } //namespace
 
@@ -166,11 +170,51 @@ ClientChannel::get(ClientChannel::GetCallback* cb,
     return Operation(ret);
 }
 
+#if __cplusplus>=201103L
+
+namespace {
+struct Getter11 : public GetterCommon<Getter11>,
+                  public ClientChannel::GetCallback
+{
+    const std::function<void(const GetEvent& evt)> cb;
+
+    Getter11(std::function<void(const GetEvent& evt)>&& cb)
+        :GetterCommon<Getter11>(this)
+        ,cb(cb)
+    {}
+
+    virtual void getDone(const GetEvent& evt) override final
+    {
+        cb(evt);
+    }
+};
+}// namespace
+
+Operation
+ClientChannel::get(std::function<void(const GetEvent& evt)>&& cb,
+                   epics::pvData::PVStructure::const_shared_pointer pvRequest)
+{
+    if(!impl) throw std::logic_error("Dead Channel");
+    if(!pvRequest)
+        pvRequest = pvd::createRequest("field()");
+
+    std::tr1::shared_ptr<Getter11> ret(Getter11::build(std::move(cb)));
+
+    {
+        Guard G(ret->mutex);
+        ret->op = getChannel()->createChannelGet(ret->internal_shared_from_this(),
+                                                 std::tr1::const_pointer_cast<pvd::PVStructure>(pvRequest));
+    }
+
+    return Operation(ret);
+}
+#endif // __cplusplus>=201103L
+
 namespace detail {
 
 void registerRefTrackGet()
 {
-    epics::registerRefCounter("pvac::Getter", &Getter::num_instances);
+    epics::registerRefCounter("pvac::Getter", &num_instances);
 }
 
 }
