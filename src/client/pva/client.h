@@ -8,6 +8,9 @@
 #include <ostream>
 #include <stdexcept>
 #include <list>
+#if __cplusplus>=201103L
+#  include <functional>
+#endif
 
 #include <epicsMutex.h>
 
@@ -323,6 +326,16 @@ public:
     //! @param pvRequest if NULL defaults to "field()".
     Operation get(GetCallback* cb,
                       epics::pvData::PVStructure::const_shared_pointer pvRequest = epics::pvData::PVStructure::const_shared_pointer());
+
+#if __cplusplus>=201103L
+    //! Issue request to retrieve current PV value
+    //! @param cb Completion notification callback.  Must outlive Operation (call Operation::cancel() to force release)
+    //! @param pvRequest if NULL defaults to "field()".
+    //! @post The completion callback is owned by the returned Operation.
+    //! @warning Reference loops may result if strong references to eg. ClientContext or ClientChannel are captured by the completion callback.
+    Operation get(std::function<void(const GetEvent& evt)>&& cb,
+                  epics::pvData::PVStructure::const_shared_pointer pvRequest = epics::pvData::PVStructure::const_shared_pointer());
+#endif
 
     //! Block and retrieve current PV value
     //! @param timeout in seconds
