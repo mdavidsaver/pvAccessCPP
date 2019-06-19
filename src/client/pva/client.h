@@ -115,6 +115,7 @@ struct epicsShareClass InfoEvent : public PutEvent
 };
 
 struct MonitorSync;
+struct MonitorEvent;
 
 //! Handle for monitor subscription
 struct epicsShareClass Monitor
@@ -180,7 +181,7 @@ private:
 };
 
 //! Information on monitor subscription/queue change
-struct MonitorEvent
+struct epicsShareClass MonitorEvent
 {
     enum event_t {
         Fail=1,      //!< subscription ends in an error
@@ -189,6 +190,18 @@ struct MonitorEvent
         Data=8,      //!< Data queue not empty.  Call Monitor::poll()
     } event;
     std::string message; //!< set for event=Fail
+
+    //! Return a reference to the Monitor from which this event was received.
+    //! May be invalid() if the underlying subscription has been closed.
+    Monitor monitor() const {
+        std::tr1::shared_ptr<Monitor::Impl> mon(monimpl.lock());
+        return Monitor(mon);
+    }
+
+private:
+    std::tr1::weak_ptr<Monitor::Impl> monimpl;
+    friend class ClientChannel;
+    friend struct MonitorSync;
 };
 
 /** Subscription usable w/o callbacks
@@ -425,6 +438,11 @@ public:
     //! @param cb Completion notification callback.  Must outlive Monitor (call Monitor::cancel() to force release)
     Monitor monitor(MonitorCallback *cb,
                           epics::pvData::PVStructure::const_shared_pointer pvRequest = epics::pvData::PVStructure::const_shared_pointer());
+
+#if __cplusplus>=201103L
+    Monitor monitor(std::function<void(const MonitorEvent&)>&& cb,
+                    epics::pvData::PVStructure::const_shared_pointer pvRequest = epics::pvData::PVStructure::const_shared_pointer());
+#endif
 
     /** Begin subscription w/o callbacks
      *

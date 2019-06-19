@@ -31,6 +31,9 @@ struct Monitor::Impl : public pvac::detail::CallbackStorage,
     bool started, done, seenEmpty;
 
     ClientChannel::MonitorCallback *cb;
+#if __cplusplus>=201103L
+    std::function<void(const MonitorEvent&)> cb11;
+#endif
     MonitorEvent event;
 
     pva::MonitorElement::Ref last;
@@ -43,26 +46,65 @@ struct Monitor::Impl : public pvac::detail::CallbackStorage,
         ,seenEmpty(false)
         ,cb(cb)
     {REFTRACE_INCREMENT(num_instances);}
+#if __cplusplus>=201103L
+    Impl(std::function<void(const MonitorEvent&)>&& cb)
+        :started(false)
+        ,done(false)
+        ,seenEmpty(false)
+        ,cb(0)
+        ,cb11(std::move(cb))
+    {REFTRACE_INCREMENT(num_instances);}
+#endif
     virtual ~Impl() {
         CallbackGuard G(*this);
         cb = 0;
+#if __cplusplus>=201103L
+        // for want of std::function::clear()
+        // swap with empty
+        decltype(cb11)().swap(cb11);
+#endif
         G.wait(); // paranoia
         REFTRACE_DECREMENT(num_instances);
+    }
+
+    bool valid() const {
+        return cb
+#if __cplusplus>=201103L
+                || cb11
+#endif
+                ;
     }
 
     void callEvent(CallbackGuard& G, MonitorEvent::event_t evt = MonitorEvent::Fail)
     {
         ClientChannel::MonitorCallback *cb=this->cb;
-        if(!cb) return;
+#if __cplusplus>=201103L
+        auto cb11 = this->cb11;
+#endif
+        if(!cb
+#if __cplusplus>=201103L
+                && !cb11
+#endif
+                ) return;
 
         event.event = evt;
 
-        if(evt==MonitorEvent::Fail || evt==MonitorEvent::Cancel)
+        if(evt==MonitorEvent::Fail || evt==MonitorEvent::Cancel) {
+            this->done = true;
             this->cb = 0; // last event
+#if __cplusplus>=201103L
+            decltype(cb11)().swap(this->cb11);
+#endif
+        }
 
         try {
             CallbackUse U(G);
-            cb->monitorEvent(event);
+            if(cb)
+                cb->monitorEvent(event);
+#if __cplusplus>=201103L
+            else
+                cb11(event);
+#endif
             return;
         }catch(std::exception& e){
             if(!this->cb || evt==MonitorEvent::Fail) {
@@ -76,7 +118,12 @@ struct Monitor::Impl : public pvac::detail::CallbackStorage,
         // continues error handling
         try {
             CallbackUse U(G);
-            cb->monitorEvent(event);
+            if(cb)
+                cb->monitorEvent(event);
+#if __cplusplus>=201103L
+            else
+                cb11(event);
+#endif
             return;
         }catch(std::exception& e){
             LOG(pva::logLevelError, "Unhandled exception following exception in ClientChannel::MonitorCallback::monitorEvent(): %s", e.what());
@@ -121,7 +168,7 @@ struct Monitor::Impl : public pvac::detail::CallbackStorage,
     {
         std::tr1::shared_ptr<Monitor::Impl> keepalive(internal_shared_from_this());
         CallbackGuard G(*this);
-        if(!cb || started || done) return;
+        if(!valid() || started || done) return;
 
         if(!status.isOK()) {
             event.message = status.getMessage();
@@ -151,7 +198,7 @@ struct Monitor::Impl : public pvac::detail::CallbackStorage,
     {
         std::tr1::shared_ptr<Monitor::Impl> keepalive(internal_shared_from_this());
         CallbackGuard G(*this);
-        if(!cb || done) return;
+        if(!valid() || done) return;
         event.message = "Disconnect";
         started = false;
         callEvent(G, MonitorEvent::Disconnect);
@@ -161,7 +208,7 @@ struct Monitor::Impl : public pvac::detail::CallbackStorage,
     {
         std::tr1::shared_ptr<Monitor::Impl> keepalive(internal_shared_from_this());
         CallbackGuard G(*this);
-        if(!cb || done) return;
+        if(!valid() || done) return;
         event.message.clear();
 
         callEvent(G, MonitorEvent::Data);
@@ -171,7 +218,7 @@ struct Monitor::Impl : public pvac::detail::CallbackStorage,
     {
         std::tr1::shared_ptr<Monitor::Impl> keepalive(internal_shared_from_this());
         CallbackGuard G(*this);
-        if(!cb || done) return;
+        if(!valid() || done) return;
         done = true;
 
         if(seenEmpty)
@@ -249,6 +296,7 @@ ClientChannel::monitor(MonitorCallback *cb,
         pvRequest = pvd::createRequest("field()");
 
     std::tr1::shared_ptr<Monitor::Impl> ret(Monitor::Impl::build(cb));
+    ret->event.monimpl = ret;
     ret->chan = getChannel();
 
     {
@@ -259,6 +307,29 @@ ClientChannel::monitor(MonitorCallback *cb,
 
     return Monitor(ret);
 }
+
+#if __cplusplus>=201103L
+Monitor
+ClientChannel::monitor(std::function<void(const MonitorEvent&)>&& cb,
+                       epics::pvData::PVStructure::const_shared_pointer pvRequest)
+{
+    if(!impl) throw std::logic_error("Dead Channel");
+    if(!pvRequest)
+        pvRequest = pvd::createRequest("field()");
+
+    std::tr1::shared_ptr<Monitor::Impl> ret(Monitor::Impl::build(std::move(cb)));
+    ret->event.monimpl = ret;
+    ret->chan = getChannel();
+
+    {
+        Guard G(ret->mutex);
+        ret->op = ret->chan->createMonitor(ret->internal_shared_from_this(),
+                                           std::tr1::const_pointer_cast<pvd::PVStructure>(pvRequest));
+    }
+
+    return Monitor(ret);
+}
+#endif
 
 ::std::ostream& operator<<(::std::ostream& strm, const Monitor& op)
 {

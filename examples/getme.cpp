@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include <exception>
+#include <iostream>
 
 #if !defined(_WIN32)
 #include <signal.h>
@@ -153,6 +154,8 @@ int main(int argc, char *argv[]) {
 
 
 #else // ! __cplusplus>=201103L
+
+#include <iostream>
 
 int main(int argc, char *argv[]) {
     std::cerr<<"This Example must be built with c++11 enabled\n";

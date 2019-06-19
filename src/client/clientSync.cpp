@@ -321,6 +321,7 @@ MonitorSync::MonitorSync(const Monitor& mon, const std::tr1::shared_ptr<SImpl>& 
 {
     simpl->sub = mon;
     event.event = MonitorEvent::Fail;
+    event.monimpl = mon.impl;
 }
 
 MonitorSync::~MonitorSync() {
