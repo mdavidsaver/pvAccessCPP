@@ -1,7 +1,9 @@
 #include <epicsUnitTest.h>
 #include <testMain.h>
 
+#include <pv/pvUnitTest.h>
 #include <pv/inetAddressUtil.h>
+#include <pv/discoverInterfaces.h>
 #include <pv/logger.h>
 
 #include <pv/byteBuffer.h>
@@ -17,6 +19,38 @@ namespace {
 
 namespace pvd = epics::pvData;
 using namespace epics::pvAccess;
+
+void test_discover()
+{
+    SOCKET sock = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+    if(!sock)
+        testAbort("Failed to allocate socket for NIC inspection");
+    try {
+        IfaceNodeVector results;
+
+        testOk1(discoverInterfaces(results, sock, 0)==0);
+
+        testShow()<<"Found "<<results.size()<<" interfaces";
+
+        for(size_t i=0, N=results.size(); i<N; i++) {
+            const ifaceNode& cur = results[i];
+
+            testShow()<<"Interface"<<i
+                    <<(cur.loopback ? " Loopback":"")
+                    <<" "<<inetAddressToString(cur.addr)
+                    <<"/"<<inetAddressToString(cur.mask);
+            if(cur.validBcast)
+                    testShow()<<"  BCast "<<inetAddressToString(cur.bcast);
+            if(cur.validP2P)
+                    testShow()<<"  P2P "<<inetAddressToString(cur.peer);
+        }
+
+    }catch(...){
+        epicsSocketDestroy(sock);
+        throw;
+    }
+    epicsSocketDestroy(sock);
+}
 
 void test_getSocketAddressList()
 {
@@ -306,9 +340,10 @@ void test_multicastLoopback()
 
 MAIN(testInetAddressUtils)
 {
-    testPlan(63);
+    testPlan(64);
     testDiag("Tests for InetAddress utils");
 
+    test_discover();
     test_getSocketAddressList();
     test_encodeAsIPv6Address();
     test_isMulticastAddress();
