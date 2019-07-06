@@ -34,4 +34,10 @@ TESTSPEC_RTEMS = pvaTestHarness.$(MUNCH_SUFFIX); pvAccessAllTests
 # Build test scripts for hosts
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
+# (Maybe) build/run individual tests for RTEMS
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTPROD_RTEMS = $(TESTPROD_HOST)
+TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+endif
+
 include $(TOP)/configure/RULES
