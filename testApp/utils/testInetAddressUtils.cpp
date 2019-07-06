@@ -13,9 +13,10 @@
 #include <iostream>
 #include <cstring>
 
-using namespace epics::pvData;
+namespace {
+
+namespace pvd = epics::pvData;
 using namespace epics::pvAccess;
-using namespace std;
 
 void test_getSocketAddressList()
 {
@@ -117,7 +118,7 @@ void test_encodeAsIPv6Address()
 {
     testDiag("Test encodeAsIPv6Address()");
 
-    epics::auto_ptr<ByteBuffer> buff(new ByteBuffer(32, EPICS_ENDIAN_LITTLE));
+    epics::auto_ptr<pvd::ByteBuffer> buff(new pvd::ByteBuffer(32, EPICS_ENDIAN_LITTLE));
 
     char src[] = { (char)0, (char)0, (char)0, (char)0, (char)0, (char)0,
                    (char)0, (char)0, (char)0, (char)0, (char)0xFF, (char)0xFF,
@@ -300,6 +301,8 @@ void test_multicastLoopback()
     epicsSocketDestroy(sendSocket);
     epicsSocketDestroy(socket);
 }
+
+} // namespace
 
 MAIN(testInetAddressUtils)
 {
