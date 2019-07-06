@@ -55,6 +55,7 @@ int ChannelAccessIFTest::runAllTest() {
     testPlan(152+EXTRA_STRESS_TESTS);
 
     epics::pvAccess::Configuration::shared_pointer base_config(ConfigurationBuilder()
+            .push_env() // fallback to environment
             //.add("EPICS_PVA_DEBUG", "3")
             .add("EPICS_PVAS_INTF_ADDR_LIST", "127.0.0.1")
             .add("EPICS_PVA_ADDR_LIST", "127.0.0.1")
@@ -136,6 +137,8 @@ int ChannelAccessIFTest::runAllTest() {
 #endif
 
     test_recreateChannelOnDestroyedProvider();
+
+    testDiag("Done");
 
     return testDone();
 }
@@ -372,7 +375,8 @@ void ChannelAccessIFTest::test_recreateChannelOnDestroyedProvider() {
     try {
         test_createChannel();
         testFail("%s: exception expected when creating a channel on destroyed context", CURRENT_FUNCTION);
-    } catch(std::runtime_error &) {
+    } catch(std::runtime_error &e) {
+        testDiag("Expected Error: %s", e.what());
     }
 }
 
@@ -2402,7 +2406,6 @@ PVStructure::shared_pointer ChannelAccessIFTest::createArrayPvRequest() {
 MAIN(testChannelAccess)
 {
     try{
-        SET_LOG_LEVEL(logLevelError);
         ChannelAccessIFTest caRemoteTest;
         return caRemoteTest.runAllTest();
     }catch(std::exception& e){

@@ -8,6 +8,7 @@
 #include <vector>
 #include <typeinfo>
 #include <pv/sharedPtr.h>
+#include <pv/pvaDefs.h>
 
 struct baseValue {
     bool remoteWritable;
@@ -119,7 +120,7 @@ baseValue::baseValue()
 #include <epicsThread.h>
 #include <epicsEvent.h>
 
-struct SimADC : public std::tr1::enable_shared_from_this<SimADC>,
+struct SimADC:
     public epicsThreadRunable
 {
     typedef std::tr1::shared_ptr<SimADC> smart_pointer_type;
@@ -137,12 +138,20 @@ struct SimADC : public std::tr1::enable_shared_from_this<SimADC>,
 
     vectorNumericValue<epicsUInt32> X;
 
+private:
     epicsThread runner;
-    bool runner_stop;
+    epics::pvAccess::AtomicBoolean runner_stop;
+    epicsEvent delay;
+public:
     epicsEvent updated;
 
     SimADC();
     virtual ~SimADC();
+
+    void stop() {
+        runner_stop.set();
+        delay.signal();
+    }
 
     virtual void run ();
     void cycle();
@@ -204,7 +213,6 @@ SimADC::SimADC()
     :runner(*this, "Runner",
             epicsThreadGetStackSize(epicsThreadStackBig),
             epicsThreadPriorityMedium)
-    ,runner_stop(false)
 {
     mult.value= rate.value= 1.0;
     shift.value= offset.value= 0.0;
@@ -239,10 +247,7 @@ SimADC::SimADC()
 
 SimADC::~SimADC()
 {
-    {
-        sim_global_type::guard_t G(mutex);
-        runner_stop = true;
-    }
+    stop();
     runner.exitWait();
 }
 
@@ -313,10 +318,12 @@ void SimADC::run()
         {
             double zzz = rate.value>0.0 ? 1.0/rate.value : min_sleep;
             sim_global_type::unguard_t U(G);
-            epicsThreadSleep(zzz);
+            delay.wait(zzz);
         }
-        if(runner_stop)
+        if(runner_stop.get()) {
+            updated.signal();
             break;
+        }
 
         cycle();
     }

@@ -61,8 +61,10 @@ public:
     }
 };
 
-void testServerContext()
+MAIN(testServerContext)
 {
+    testPlan(0);
+
     ChannelProvider::shared_pointer prov(new TestChannelProvider);
     ServerContext::shared_pointer ctx(ServerContext::create(ServerContext::Config()
                                                                 .provider(prov)));
@@ -77,13 +79,6 @@ void testServerContext()
     ctx.reset();
 
     testOk(!wctx.lock(), "# ServerContext cleanup leaves use_count=%u", (unsigned)wctx.use_count());
-}
-
-MAIN(testServerContext)
-{
-    testPlan(0);
-
-    testServerContext();
 
     return testDone();
 }

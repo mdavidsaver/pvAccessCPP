@@ -130,10 +130,18 @@ class ProcessAction : public Runnable {
 public:
     typedef vector<ChannelProcess::shared_pointer> ChannelProcessVector;
     ChannelProcessVector toProcess;
+private:
     AtomicBoolean stopped;
-    double period;
+    epicsEvent delay;
+public:
+    const double period;
 
     ProcessAction(double periodHz) : period(periodHz) {}
+
+    void stop() {
+        stopped.set();
+        delay.signal();
+    }
 
     virtual void run()
     {
@@ -153,7 +161,7 @@ public:
                 }
             }
 
-            epicsThreadSleep(period);
+            delay.wait(period);
         }
     }
 };
@@ -164,10 +172,16 @@ public:
     string name;
     epics::pvData::PVStructure::shared_pointer adcMatrix;
     SimADC::smart_pointer_type adcSim;
-
+private:
     AtomicBoolean stopped;
+public:
 
     ADCAction() {}
+
+    void stop() {
+        stopped.set();
+        adcSim->stop();
+    }
 
     virtual void run()
     {
@@ -226,14 +240,22 @@ public:
     string name;
     PVStructure::shared_pointer pvImage;
     float angle;
-    double period;
+    const double period;
 
+private:
     AtomicBoolean stopped;
+    epicsEvent delay;
+public:
 
     NTNDArrayAction(double periodHz) :
         angle(0),
         period(periodHz)
     {
+    }
+
+    void stop() {
+        stopped.set();
+        delay.signal();
     }
 
     virtual void run()
@@ -254,7 +276,7 @@ public:
                     std::cerr << "Unhandled exception caught in NTNDArrayAction::run()" << std::endl;
                 }
 
-                epicsThreadSleep(period);
+                delay.wait(period);
             }
         }
     }
@@ -2530,10 +2552,10 @@ public:
 
     virtual ~MockServerChannelProvider()
     {
-        m_scan1Hz.stopped.set();
-        m_scan10Hz.stopped.set();
-        m_adcAction.stopped.set();
-        m_imgAction.stopped.set();
+        m_scan1Hz.stop();
+        m_scan10Hz.stop();
+        m_adcAction.stop();
+        m_imgAction.stop();
     }
 
     void initialize()
@@ -2819,7 +2841,7 @@ int main(int argc, char *argv[])
                                    .build()));
     TestServer::ctx = srv;
     srv->context->printInfo();
-    srv->context->run(epics::pvData::castUnsafe<epicsUInt32>(timeToRun));
+    srv->context->run(epics::pvData::castUnsafe<uint32>(timeToRun));
 
     cout << "Done" << endl;
 
