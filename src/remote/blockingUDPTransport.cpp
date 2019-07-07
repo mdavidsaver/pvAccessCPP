@@ -622,6 +622,10 @@ void initializeUDPTransports(bool serverFlag,
     {
         ifaceNode node = *iter;
 
+        // don't auto-discover the loopback
+        if(node.loopback)
+            continue;
+
         // in practice, interface will have either destination (PPP)
         // or broadcast, but never both.
         if (node.validP2P && node.peer.ia.sin_family != AF_UNSPEC)

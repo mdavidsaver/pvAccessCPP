@@ -191,20 +191,10 @@ void ServerContextImpl::loadConfiguration()
 
     osiSockAttach();
 
-    SOCKET sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
-    if (!sock) {
-        THROW_BASE_EXCEPTION("Failed to create a socket needed to introspect network interfaces.");
-    }
-
-    if (discoverInterfaces(_ifaceList, sock, &_ifaceAddr))
+    if(discoverInterfaces(_ifaceList, &_ifaceAddr))
     {
-        THROW_BASE_EXCEPTION("Failed to introspect network interfaces.");
+        LOG(logLevelError, "Failed to introspect interfaces or no network interfaces available.");
     }
-    else if (_ifaceList.size() == 0)
-    {
-        THROW_BASE_EXCEPTION("No (specified) network interface(s) available.");
-    }
-    epicsSocketDestroy(sock);
 }
 
 Configuration::shared_pointer

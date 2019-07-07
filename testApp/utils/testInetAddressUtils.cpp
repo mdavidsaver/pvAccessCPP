@@ -22,34 +22,59 @@ using namespace epics::pvAccess;
 
 void test_discover()
 {
-    SOCKET sock = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
-    if(!sock)
-        testAbort("Failed to allocate socket for NIC inspection");
-    try {
-        IfaceNodeVector results;
+    testDiag("test_discover()");
 
-        testOk1(discoverInterfaces(results, sock, 0)==0);
+    IfaceNodeVector results;
 
-        testShow()<<"Found "<<results.size()<<" interfaces";
+    testDiag("Search including LO");
+    testOk1(discoverInterfaces(results, 0, true)==0);
 
-        for(size_t i=0, N=results.size(); i<N; i++) {
-            const ifaceNode& cur = results[i];
+    testShow()<<"Found "<<results.size()<<" interfaces";
 
-            testShow()<<"Interface"<<i
-                    <<(cur.loopback ? " Loopback":"")
-                    <<" "<<inetAddressToString(cur.addr)
-                    <<"/"<<inetAddressToString(cur.mask);
-            if(cur.validBcast)
-                    testShow()<<"  BCast "<<inetAddressToString(cur.bcast);
-            if(cur.validP2P)
-                    testShow()<<"  P2P "<<inetAddressToString(cur.peer);
-        }
+    bool foundlo = false;
 
-    }catch(...){
-        epicsSocketDestroy(sock);
-        throw;
+    for(size_t i=0, N=results.size(); i<N; i++) {
+        const ifaceNode& cur = results[i];
+
+        foundlo |= cur.loopback;
+
+        testShow()<<"Interface"<<i
+                  <<(cur.loopback ? " Loopback":"")
+                  <<" "<<inetAddressToString(cur.addr)
+                  <<"/"<<inetAddressToString(cur.mask);
+        if(cur.validBcast)
+            testShow()<<"  BCast "<<inetAddressToString(cur.bcast);
+        if(cur.validP2P)
+            testShow()<<"  P2P "<<inetAddressToString(cur.peer);
     }
-    epicsSocketDestroy(sock);
+
+    testOk1(!!foundlo);
+
+    results.clear();
+
+    testDiag("Search again excluding LO");
+    testOk1(discoverInterfaces(results, 0, false)==0);
+
+    testShow()<<"Found "<<results.size()<<" interfaces";
+
+    foundlo = false;
+
+    for(size_t i=0, N=results.size(); i<N; i++) {
+        const ifaceNode& cur = results[i];
+
+        foundlo |= cur.loopback;
+
+        testShow()<<"Interface"<<i
+                  <<(cur.loopback ? " Loopback":"")
+                  <<" "<<inetAddressToString(cur.addr)
+                  <<"/"<<inetAddressToString(cur.mask);
+        if(cur.validBcast)
+            testShow()<<"  BCast "<<inetAddressToString(cur.bcast);
+        if(cur.validP2P)
+            testShow()<<"  P2P "<<inetAddressToString(cur.peer);
+    }
+
+    testOk1(!foundlo);
 }
 
 void test_getSocketAddressList()
@@ -340,7 +365,7 @@ void test_multicastLoopback()
 
 MAIN(testInetAddressUtils)
 {
-    testPlan(64);
+    testPlan(67);
     testDiag("Tests for InetAddress utils");
 
     test_discover();
