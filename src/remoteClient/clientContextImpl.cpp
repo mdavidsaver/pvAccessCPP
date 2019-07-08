@@ -4015,7 +4015,7 @@ public:
         Lock lock(m_contextMutex);
 
         if (m_contextState == CONTEXT_DESTROYED)
-            throw std::runtime_error("Context destroyed.");
+            throw std::runtime_error("Context destroyed!");
         else if (m_contextState == CONTEXT_INITIALIZED)
             throw std::runtime_error("Context already initialized.");
 
