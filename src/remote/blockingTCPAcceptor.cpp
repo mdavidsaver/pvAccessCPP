@@ -244,20 +244,19 @@ void BlockingTCPAcceptor::destroy() {
         ipAddrToDottedIP(&_bindAddress.ia, ipAddrStr, sizeof(ipAddrStr));
         LOG(logLevelDebug, "Stopped accepting connections at %s.", ipAddrStr);
 
-        switch(epicsSocketSystemCallInterruptMechanismQuery())
-        {
-        case esscimqi_socketBothShutdownRequired:
-            shutdown(sock, SHUT_RDWR);
-            epicsSocketDestroy(sock);
-            _thread.exitWait();
-            break;
-        case esscimqi_socketSigAlarmRequired:
-            LOG(logLevelError, "SigAlarm close not implemented for this target\n");
-        case esscimqi_socketCloseRequired:
-            epicsSocketDestroy(sock);
-            _thread.exitWait();
-            break;
-        }
+        // interrupts concurrent accept() on some targets (Linux and RTEMS).
+        // a no-op on others (eg. WIN32, Darwin)
+        (void)shutdown(sock, SHUT_RDWR);
+
+#if defined(__linux__) || defined(__rtems__)
+        _thread.exitWait();
+        epicsSocketDestroy(sock);
+#else
+        // an unavoidable race.  Try to lose
+        epicsThreadSleep(0);
+        epicsSocketDestroy(sock);
+        _thread.exitWait();
+#endif
     }
 }
 
