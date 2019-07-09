@@ -137,6 +137,8 @@ int ChannelAccessIFTest::runAllTest() {
 
     test_recreateChannelOnDestroyedProvider();
 
+    testDiag("Done");
+
     return testDone();
 }
 
@@ -372,7 +374,8 @@ void ChannelAccessIFTest::test_recreateChannelOnDestroyedProvider() {
     try {
         test_createChannel();
         testFail("%s: exception expected when creating a channel on destroyed context", CURRENT_FUNCTION);
-    } catch(std::runtime_error &) {
+    } catch(std::runtime_error &e) {
+        testDiag("Expected Error: %s", e.what());
     }
 }
 
