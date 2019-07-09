@@ -1017,7 +1017,12 @@ BlockingTCPTransportCodec::~BlockingTCPTransportCodec()
 {
     REFTRACE_DECREMENT(num_instances);
 
+    close();
     waitJoin();
+#ifndef _WIN32
+    // cf. close()
+    epicsSocketDestroy(_channel);
+#endif
 }
 
 void BlockingTCPTransportCodec::readPollOne() {
@@ -1037,7 +1042,33 @@ void BlockingTCPTransportCodec::close() {
         // always close in the same thread, same way, etc.
         // wakeup processSendQueue
 
-        // clean resources (close socket)
+#ifdef _WIN32
+        // winsock only interrupts recv()/send() with socketclose(),
+        // which also frees the SOCKET.
+        // This races with a worker entering these syscalls.
+        // There seems to be no way to avoid this while still using blocking send()/recv().
+        // The following is also racy, but hey it can't be that much worse...
+        SOCKET sock(_channel);
+        _channel = INVALID_SOCKET;
+
+        epicsSocketDestroy(sock);
+#else
+
+        (void)::shutdown ( _channel, SHUT_RDWR );
+        // wait until dtor (after waitJoin) to close socket
+#endif
+
+        Transport::shared_pointer thisSharedPtr = this->shared_from_this();
+        _context->getTransportRegistry()->remove(thisSharedPtr);
+
+        if (IS_LOGGABLE(logLevelDebug))
+        {
+            LOG(logLevelDebug,
+                "TCP socket to %s is to be closed.",
+                _socketName.c_str());
+        }
+
+        // cleanup channels (different for client vs. server)
         internalClose();
 
         // Break sender from queue wait
@@ -1053,50 +1084,7 @@ void BlockingTCPTransportCodec::waitJoin()
     _readThread.exitWait();
 }
 
-void BlockingTCPTransportCodec::internalClose()
-{
-    {
-
-        epicsSocketSystemCallInterruptMechanismQueryInfo info  =
-            epicsSocketSystemCallInterruptMechanismQuery ();
-        switch ( info )
-        {
-        case esscimqi_socketCloseRequired:
-            epicsSocketDestroy ( _channel );
-            break;
-        case esscimqi_socketBothShutdownRequired:
-        {
-            /*int status =*/ ::shutdown ( _channel, SHUT_RDWR );
-            /*
-            if ( status ) {
-                char sockErrBuf[64];
-                epicsSocketConvertErrnoToString (
-                    sockErrBuf, sizeof ( sockErrBuf ) );
-            LOG(logLevelDebug,
-                "TCP socket to %s failed to shutdown: %s.",
-                inetAddressToString(_socketAddress).c_str(), sockErrBuf);
-            }
-            */
-            epicsSocketDestroy ( _channel );
-        }
-        break;
-        case esscimqi_socketSigAlarmRequired:
-        // not supported anymore anyway
-        default:
-            epicsSocketDestroy(_channel);
-        }
-    }
-
-    Transport::shared_pointer thisSharedPtr = this->shared_from_this();
-    _context->getTransportRegistry()->remove(thisSharedPtr);
-
-    if (IS_LOGGABLE(logLevelDebug))
-    {
-        LOG(logLevelDebug,
-            "TCP socket to %s is to be closed.",
-            _socketName.c_str());
-    }
-}
+void BlockingTCPTransportCodec::internalClose() {}
 
 bool BlockingTCPTransportCodec::terminated() {
     return !isOpen();
@@ -1294,11 +1282,16 @@ int BlockingTCPTransportCodec::write(
 
             int socketError = SOCKERRNO;
 
-            // spurious EINTR check
-            if (socketError==SOCK_EINTR)
+            if(!_isOpen.get()) {
+                return 0; // some targets give spurious errors when interrupted
+
+            } else if (socketError==SOCK_EINTR) {
                 continue;
-            else if (socketError==SOCK_ENOBUFS)
+
+            } else {
+                errlogPrintf("%s : Connection closed with TX socket error %d\n", _socketName.c_str(), socketError);
                 return 0;
+            }
         }
 
         if (bytesSent > 0) {
@@ -1332,7 +1325,10 @@ int BlockingTCPTransportCodec::read(epics::pvData::ByteBuffer* dst) {
         } else if(unlikely(bytesRead<0)) {
             int err = SOCKERRNO;
 
-            if(err==SOCK_EINTR) {
+            if(!_isOpen.get()) {
+                return 0; // some targets give spurious errors when interrupted
+
+            } else if(err==SOCK_EINTR) {
                 // interrupted by signal.  Retry
                 continue;
 
@@ -1621,7 +1617,6 @@ void BlockingServerTCPTransportCodec::destroyAllChannels() {
 
 void BlockingServerTCPTransportCodec::internalClose() {
     Transport::shared_pointer thisSharedPtr = shared_from_this();
-    BlockingTCPTransportCodec::internalClose();
     destroyAllChannels();
 }
 
@@ -1772,7 +1767,6 @@ bool BlockingClientTCPTransportCodec::acquire(ClientChannelImpl::shared_pointer 
 
 // _mutex is held when this method is called
 void BlockingClientTCPTransportCodec::internalClose() {
-    BlockingTCPTransportCodec::internalClose();
 
     TimerCallbackPtr tcb = std::tr1::dynamic_pointer_cast<TimerCallback>(shared_from_this());
     _context->getTimer()->cancel(tcb);

@@ -448,7 +448,7 @@ protected:
 private:
     AtomicValue<bool> _isOpen;
     epics::pvData::Thread _readThread, _sendThread;
-    const SOCKET _channel;
+    SOCKET _channel;
 protected:
     osiSockAddr _socketAddress;
     std::string _socketName;

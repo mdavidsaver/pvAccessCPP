@@ -141,35 +141,23 @@ void BlockingUDPTransport::close(bool waitForThreadToComplete) {
             inetAddressToString(_bindAddress).c_str());
     }
 
-    epicsSocketSystemCallInterruptMechanismQueryInfo info  =
-        epicsSocketSystemCallInterruptMechanismQuery ();
-    switch ( info )
-    {
-    case esscimqi_socketCloseRequired:
-        epicsSocketDestroy ( _channel );
-        break;
-    case esscimqi_socketBothShutdownRequired:
-    {
-        /*int status =*/ ::shutdown ( _channel, SHUT_RDWR );
-        /*
-        if ( status ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString (
-                sockErrBuf, sizeof ( sockErrBuf ) );
-        LOG(logLevelDebug,
-            "UDP socket %s failed to shutdown: %s.",
-            inetAddressToString(_bindAddress).c_str(), sockErrBuf);
-        }
-        */
-        epicsSocketDestroy ( _channel );
-    }
-    break;
-    case esscimqi_socketSigAlarmRequired:
-    // not supported anymore anyway
-    default:
-        epicsSocketDestroy(_channel);
-    }
+    SOCKET sock(_channel);
+    _channel = INVALID_SOCKET;
 
+    // interrupts concurrent recvfrom() on some targets (Linux, RTEMS, and WIN32).
+    // a no-op on others (eg. Darwin)
+    (void)shutdown(sock, SHUT_RDWR);
+
+#if defined(__linux__) || defined(__rtems__) || defined(_WIN32)
+    // must wait for concurrent recvfrom() to return or UB would follow
+    if(_thread.get()) _thread->exitWait(2.0);
+    epicsSocketDestroy(sock);
+#else
+    // an unavoidable race.  Try to lose
+    epicsThreadSleep(0);
+    epicsSocketDestroy(sock);
+    if(_thread.get()) _thread->exitWait(2.0);
+#endif
 
     // wait for send thread to exit cleanly
     if (_thread.get() && waitForThreadToComplete)
