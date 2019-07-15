@@ -4147,7 +4147,7 @@ private:
         // setup UDP transport
         {
             IfaceNodeVector ifaceList;
-            if (discoverInterfaces(ifaceList))
+            if (discoverInterfaces(ifaceList, NULL, true))
             {
                 LOG(logLevelError, "Failed to introspect interfaces or no network interfaces available.");
             }

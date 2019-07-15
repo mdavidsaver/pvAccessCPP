@@ -189,6 +189,20 @@ bool matchAddr(const ifaceNode& node, const osiSockAddr *pMatchAddr, bool matchL
     return node.addr.ia.sin_addr.s_addr == pMatchAddr->ia.sin_addr.s_addr;
 }
 
+// assume that a loopback interface exists, even if the OS doesn't list it (WIN32)
+void ensureLoopback(IfaceNodeVector &list)
+{
+    for(size_t i=0; i<list.size(); i++) {
+        if(list[i].loopback)
+            return;
+    }
+    ifaceNode lo;
+    lo.addr.ia.sin_family = AF_INET;
+    lo.addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    lo.loopback = true;
+    list.push_back(lo);
+}
+
 struct TempSock {
     SOCKET sock;
     TempSock()
@@ -346,6 +360,8 @@ int discoverInterfaces(IfaceNodeVector &list, const osiSockAddr *pMatchAddr, boo
         list.push_back(node);
     }
 
+    if(matchLoopback)
+        ensureLoopback(list);
     return 0;
 }
 
@@ -424,6 +440,8 @@ int discoverInterfaces(IfaceNodeVector &list, const osiSockAddr *pMatchAddr, boo
         list.push_back(node);
     }
 
+    if(matchLoopback)
+        ensureLoopback(list);
     return 0;
 }
 
