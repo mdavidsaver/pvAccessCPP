@@ -90,12 +90,14 @@ BlockingUDPTransport::BlockingUDPTransport(bool serverFlag,
     }
 
     REFTRACE_INCREMENT(num_instances);
+    std::cerr<<"YYYYYY BlockingUDPTransport "<<std::hex<<int(_clientServerWithEndianFlag)<<"\n";
 }
 
 BlockingUDPTransport::~BlockingUDPTransport() {
     REFTRACE_DECREMENT(num_instances);
 
     close(true); // close the socket and stop the thread.
+    std::cerr<<"XXXXXX ~BlockingUDPTransport "<<std::hex<<int(_clientServerWithEndianFlag)<<"\n";
 }
 
 void BlockingUDPTransport::start() {
@@ -128,36 +130,36 @@ void BlockingUDPTransport::ensureData(std::size_t size) {
 }
 
 void BlockingUDPTransport::close(bool waitForThreadToComplete) {
-    {
-        Lock guard(_mutex);
-        if(_closed.get()) return;
+
+    if(!_closed.get()) {
         _closed.set();
-    }
 
-    if (IS_LOGGABLE(logLevelDebug))
-    {
-        LOG(logLevelDebug,
-            "UDP socket %s closed.",
-            inetAddressToString(_bindAddress).c_str());
-    }
+        if (IS_LOGGABLE(logLevelDebug))
+        {
+            LOG(logLevelDebug,
+                "UDP socket %s closed.",
+                inetAddressToString(_bindAddress).c_str());
+        }
 
-    SOCKET sock(_channel);
-    _channel = INVALID_SOCKET;
+        SOCKET sock(_channel);
+        _channel = INVALID_SOCKET;
 
-    // interrupts concurrent recvfrom() on some targets (Linux, RTEMS, and WIN32).
-    // a no-op on others (eg. Darwin)
-    (void)shutdown(sock, SHUT_RDWR);
+        // interrupts concurrent recvfrom() on some targets (Linux, RTEMS, and WIN32).
+        // a no-op on others (eg. Darwin)
+        (void)shutdown(sock, SHUT_RDWR);
 
 #if defined(__linux__) || defined(__rtems__) || defined(_WIN32)
-    // must wait for concurrent recvfrom() to return or UB would follow
-    if(_thread.get()) _thread->exitWait(2.0);
-    epicsSocketDestroy(sock);
+        // must wait for concurrent recvfrom() to return or UB would follow
+        if(_thread.get()) _thread->exitWait(2.0);
+        epicsSocketDestroy(sock);
 #else
-    // an unavoidable race.  Try to lose
-    epicsThreadSleep(0);
-    epicsSocketDestroy(sock);
-    if(_thread.get()) _thread->exitWait(2.0);
+        // an unavoidable race.  Try to lose
+        epicsThreadSleep(0);
+        epicsSocketDestroy(sock);
+        if(_thread.get()) _thread->exitWait(2.0);
 #endif
+
+    }
 
     // wait for send thread to exit cleanly
     if (_thread.get() && waitForThreadToComplete)

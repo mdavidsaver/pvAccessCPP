@@ -43,6 +43,7 @@ BlockingTCPAcceptor::BlockingTCPAcceptor(Context::shared_pointer const & context
 
 BlockingTCPAcceptor::~BlockingTCPAcceptor() {
     destroy();
+    std::cerr<<"XXXXXX ~BlockingTCPAcceptor\n";
 }
 
 int BlockingTCPAcceptor::initialize() {

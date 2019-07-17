@@ -313,8 +313,6 @@ public:
 
     POINTER_DEFINITIONS(BlockingTCPTransportCodec);
 
-    static size_t num_instances;
-
     BlockingTCPTransportCodec(
             bool serverFlag,
             Context::shared_pointer const & context,
@@ -323,7 +321,7 @@ public:
             size_t sendBufferSize,
             size_t receiveBufferSize,
             epics::pvData::int16 priority);
-    virtual ~BlockingTCPTransportCodec();
+    virtual ~BlockingTCPTransportCodec() =0;
 
     virtual void readPollOne() OVERRIDE FINAL;
     virtual void writePollOne() OVERRIDE FINAL;
@@ -483,6 +481,8 @@ class BlockingServerTCPTransportCodec :
 public:
     POINTER_DEFINITIONS(BlockingServerTCPTransportCodec);
 
+    static size_t num_instances;
+
 protected:
     BlockingServerTCPTransportCodec(
         Context::shared_pointer const & context,
@@ -600,6 +600,8 @@ class BlockingClientTCPTransportCodec :
 
 public:
     POINTER_DEFINITIONS(BlockingClientTCPTransportCodec);
+
+    static size_t num_instances;
 
 protected:
     BlockingClientTCPTransportCodec(

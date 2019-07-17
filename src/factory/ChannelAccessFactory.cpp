@@ -216,7 +216,8 @@ void providerRegInit(void*)
     registerRefCounter("ServerContextImpl", &ServerContextImpl::num_instances);
     registerRefCounter("ServerChannel", &ServerChannel::num_instances);
     registerRefCounter("Transport (ABC)", &Transport::num_instances);
-    registerRefCounter("BlockingTCPTransportCodec", &detail::BlockingTCPTransportCodec::num_instances);
+    registerRefCounter("BlockingClientTCPTransportCodec", &detail::BlockingClientTCPTransportCodec::num_instances);
+    registerRefCounter("BlockingServerTCPTransportCodec", &detail::BlockingServerTCPTransportCodec::num_instances);
     registerRefCounter("BlockingUDPTransport", &BlockingUDPTransport::num_instances);
     registerRefCounter("ChannelProvider (ABC)", &ChannelProvider::num_instances);
     registerRefCounter("Channel (ABC)", &Channel::num_instances);

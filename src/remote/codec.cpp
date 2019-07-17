@@ -1015,14 +1015,13 @@ bool AbstractCodec::directDeserialize(ByteBuffer *existingBuffer, char* deserial
 
 BlockingTCPTransportCodec::~BlockingTCPTransportCodec()
 {
-    REFTRACE_DECREMENT(num_instances);
-
     close();
     waitJoin();
 #ifndef _WIN32
     // cf. close()
     epicsSocketDestroy(_channel);
 #endif
+    std::cerr<<"XXXXXX ~BlockingTCPTransportCodec\n";
 }
 
 void BlockingTCPTransportCodec::readPollOne() {
@@ -1209,8 +1208,6 @@ void BlockingTCPTransportCodec::sendBufferFull(int tries) {
 //
 //
 
-size_t BlockingTCPTransportCodec::num_instances;
-
 BlockingTCPTransportCodec::BlockingTCPTransportCodec(bool serverFlag, const Context::shared_pointer &context,
     SOCKET channel, const ResponseHandler::shared_pointer &responseHandler,
     size_t sendBufferSize,
@@ -1237,8 +1234,6 @@ BlockingTCPTransportCodec::BlockingTCPTransportCodec(bool serverFlag, const Cont
     ,_priority(priority)
     ,_verified(false)
 {
-    REFTRACE_INCREMENT(num_instances);
-
     _isOpen.getAndSet(true);
 
     // get remote address
@@ -1424,6 +1419,7 @@ void BlockingTCPTransportCodec::sendSecurityPluginMessage(epics::pvData::PVStruc
 
 
 
+size_t BlockingServerTCPTransportCodec::num_instances;
 
 
 BlockingServerTCPTransportCodec::BlockingServerTCPTransportCodec(
@@ -1438,6 +1434,7 @@ BlockingServerTCPTransportCodec::BlockingServerTCPTransportCodec(
     ,_verificationStatus(pvData::Status::fatal("Uninitialized error"))
     ,_verifyOrVerified(false)
 {
+    REFTRACE_INCREMENT(num_instances);
     // NOTE: priority not yet known, default priority is used to
     //register/unregister
     // TODO implement priorities in Reactor... not that user will
@@ -1446,6 +1443,7 @@ BlockingServerTCPTransportCodec::BlockingServerTCPTransportCodec(
 
 
 BlockingServerTCPTransportCodec::~BlockingServerTCPTransportCodec() {
+    REFTRACE_DECREMENT(num_instances);
 }
 
 
@@ -1688,6 +1686,8 @@ void BlockingServerTCPTransportCodec::authNZInitialize(const std::string& securi
 
 
 
+size_t BlockingClientTCPTransportCodec::num_instances;
+
 
 BlockingClientTCPTransportCodec::BlockingClientTCPTransportCodec(
     Context::shared_pointer const & context,
@@ -1705,6 +1705,7 @@ BlockingClientTCPTransportCodec::BlockingClientTCPTransportCodec(
     _verifyOrEcho(true),
     sendQueued(true) // don't start sending echo until after auth complete
 {
+    REFTRACE_INCREMENT(num_instances);
     // initialize owners list, send queue
     acquire(client);
 
@@ -1724,6 +1725,8 @@ void BlockingClientTCPTransportCodec::start()
 }
 
 BlockingClientTCPTransportCodec::~BlockingClientTCPTransportCodec() {
+
+    REFTRACE_DECREMENT(num_instances);
 }
 
 
