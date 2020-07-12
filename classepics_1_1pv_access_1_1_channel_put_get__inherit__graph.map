@@ -1,0 +1,4 @@
+<map id="epics::pvAccess::ChannelPutGet" name="epics::pvAccess::ChannelPutGet">
+<area shape="rect" id="node2" href="$classepics_1_1pv_access_1_1_channel_request.html" title="Base interface for all channel requests (aka. " alt="" coords="17,80,191,121"/>
+<area shape="rect" id="node3" href="$classepics_1_1pv_access_1_1_destroyable.html" title="Instance declaring destroy method. " alt="" coords="5,5,203,32"/>
+</map>

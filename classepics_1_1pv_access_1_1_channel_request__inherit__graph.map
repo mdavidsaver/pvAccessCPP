@@ -1,0 +1,9 @@
+<map id="epics::pvAccess::ChannelRequest" name="epics::pvAccess::ChannelRequest">
+<area shape="rect" id="node3" href="$classepics_1_1pv_access_1_1_channel_array.html" title="Request to put and get Array Data. " alt="" coords="488,5,663,47"/>
+<area shape="rect" id="node4" href="$classepics_1_1pv_access_1_1_channel_get.html" title="Request to get data from a channel. " alt="" coords="477,71,673,98"/>
+<area shape="rect" id="node5" href="$classepics_1_1pv_access_1_1_channel_process.html" title="ChannelProcess &#45; request that a channel be processed. " alt="" coords="488,123,663,164"/>
+<area shape="rect" id="node6" href="$classepics_1_1pv_access_1_1_channel_put.html" title="Interface for a channel access put request. " alt="" coords="478,189,673,215"/>
+<area shape="rect" id="node7" href="$classepics_1_1pv_access_1_1_channel_put_get.html" title="Channel access put/get request. " alt="" coords="488,240,663,281"/>
+<area shape="rect" id="node8" href="$classepics_1_1pv_access_1_1_channel_r_p_c.html" title="Handle for an RPC operation. " alt="" coords="473,306,677,333"/>
+<area shape="rect" id="node2" href="$classepics_1_1pv_access_1_1_destroyable.html" title="Instance declaring destroy method. " alt="" coords="5,159,203,186"/>
+</map>
