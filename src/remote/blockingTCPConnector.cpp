@@ -102,15 +102,19 @@ Transport::shared_pointer BlockingTCPConnector::connect(std::tr1::shared_ptr<Cli
 
         LOG(logLevelDebug, "Socket connected to PVA server: %s.", ipAddrStr);
 
+        int optval = 1, retval;
+
+#if defined(__rtems__) || defined(vxWorks)
         // enable TCP_NODELAY (disable Nagle's algorithm)
-        int optval = 1; // true
-        int retval = ::setsockopt(socket, IPPROTO_TCP, TCP_NODELAY,
+        // for embedded targets with coarse timers
+        retval = ::setsockopt(socket, IPPROTO_TCP, TCP_NODELAY,
                                   (char *)&optval, sizeof(int));
         if(retval<0) {
             char errStr[64];
             epicsSocketConvertErrnoToString(errStr, sizeof(errStr));
             LOG(logLevelWarn, "Error setting TCP_NODELAY: %s.", errStr);
         }
+#endif
 
         // enable TCP_KEEPALIVE
         retval = ::setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE,

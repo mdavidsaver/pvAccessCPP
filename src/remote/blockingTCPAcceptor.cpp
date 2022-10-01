@@ -159,13 +159,17 @@ void BlockingTCPAcceptor::run() {
             ipAddrToDottedIP(&address.ia, ipAddrStr, sizeof(ipAddrStr));
             LOG(logLevelDebug, "Accepted connection from PVA client: %s.", ipAddrStr);
 
+            int optval = 1, retval;
+
+#if defined(__rtems__) || defined(vxWorks)
             // enable TCP_NODELAY (disable Nagle's algorithm)
-            int optval = 1; // true
-            int retval = ::setsockopt(newClient, IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(int));
+            // for embedded targets with coarse timers
+            retval = ::setsockopt(newClient, IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(int));
             if(retval<0) {
                 epicsSocketConvertErrnoToString(strBuffer, sizeof(strBuffer));
                 LOG(logLevelDebug, "Error setting TCP_NODELAY: %s.", strBuffer);
             }
+#endif
 
             // enable TCP_KEEPALIVE
             retval = ::setsockopt(newClient, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(int));
