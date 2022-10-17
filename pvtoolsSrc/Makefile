@@ -28,6 +28,10 @@ pvinfo_SRCS += pvutils.cpp
 PROD_DEFAULT += pvlist
 pvlist_SRCS += pvlist.cpp
 
+TESTPROD_HOST += atespam
+atespam_SRCS += atespam.cpp
+atespam_SRCS += pvutils.cpp
+
 PROD_LIBS += pvAccessCA pvAccess pvData ca Com
 
 PROD_SYS_LIBS_WIN32 += netapi32 ws2_32
