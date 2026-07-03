@@ -32,8 +32,7 @@ BeaconHandler::~BeaconHandler()
 
 void BeaconHandler::beaconNotify(osiSockAddr* /*from*/, int8 remoteTransportRevision,
                                  TimeStamp* timestamp, ServerGUID const & guid, int16 sequentalID,
-                                 int16 changeCount,
-                                 const PVFieldPtr& /*data*/)
+                                 int16 changeCount)
 {
     bool networkChanged = updateBeacon(remoteTransportRevision, timestamp, guid, sequentalID, changeCount);
     // TODO: reduce search timers

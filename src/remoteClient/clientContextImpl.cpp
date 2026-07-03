@@ -2800,17 +2800,10 @@ public:
         if (!beaconHandler)
             return;
 
-        // extra data
-        PVFieldPtr data;
-        const FieldConstPtr field = getFieldCreate()->deserialize(payloadBuffer, transport.get());
-        if (field)
-        {
-            data = getPVDataCreate()->createPVField(field);
-            data->deserialize(payloadBuffer, transport.get());
-        }
+        // ignore extra PVData
 
         // notify beacon handler
-        beaconHandler->beaconNotify(responseFrom, version, &timestamp, guid, sequentalID, changeCount, data);
+        beaconHandler->beaconNotify(responseFrom, version, &timestamp, guid, sequentalID, changeCount);
     }
 };
 

@@ -67,8 +67,7 @@ public:
                       epics::pvData::TimeStamp* timestamp,
                       ServerGUID const &guid,
                       epics::pvData::int16 sequentalID,
-                      epics::pvData::int16 changeCount,
-                      const epics::pvData::PVFieldPtr& data);
+                      epics::pvData::int16 changeCount);
 private:
     /**
      * Context instance.
